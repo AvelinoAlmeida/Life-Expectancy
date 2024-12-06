@@ -75,7 +75,7 @@ elif menu == "Previsão":
     st.write("Insira os dados abaixo para prever a expectativa de vida:")
 
     # Variáveis do modelo
-    feature_columns = ["HIV/AIDS", "Income composition of resources", "Adult Mortality", "BMI", "under-five deaths"]
+    feature_columns = ["'Hepatitis B', 'Polio', 'Diphtheria'"]
 
     # Captura de entrada do utilizador
     input_data = {}
