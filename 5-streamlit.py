@@ -8,7 +8,7 @@ st.set_page_config(page_title="Previsão de Expectativa de Vida", layout="wide")
 
 # Barra lateral de navegação
 st.sidebar.title("Menu de Navegação")
-menu = st.sidebar.radio("Ir para", ["Início", "Estatísticas", "Previsão", "Socioeconômico", "Vacinação" ])
+menu = st.sidebar.radio("Ir para", ["Início", "Estatísticas"    , "Socioeconômico", "Vacinação" ])
 
 # Carregar os modelos salvos
 try:
