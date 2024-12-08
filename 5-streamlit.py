@@ -1,124 +1,129 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import h2o
-from h2o.estimators import H2ORandomForestEstimator
-from h2o.frame import H2OFrame
-import plotly.express as px
-
-# Inicializar o H2O
-h2o.init()
-
-# Carregar o modelo salvo
-model_path = "./models/rf_vaccination_model"
-rf_model = h2o.load_model(model_path)
+import joblib
 
 # Configurar o Streamlit
 st.set_page_config(page_title="Previsão de Expectativa de Vida", layout="wide")
 
 # Barra lateral de navegação
 st.sidebar.title("Menu de Navegação")
-menu = st.sidebar.radio("Ir para", ["Início", "Estatísticas", "Previsão", "Previsão em Massa"])
+menu = st.sidebar.radio("Ir para", ["Início", "Estatísticas", "Previsão", "Socioeconômico", "Vacinação" ])
+
+# Carregar os modelos salvos
+try:
+    socioeconomic_model = joblib.load("./models/socioeconomic_predictions.pkl")
+    vaccination_model = joblib.load("./models/vaccination_predictions.pkl")
+    st.sidebar.success("Modelos carregados com sucesso!")
+except FileNotFoundError:
+    st.sidebar.error("Erro: Um ou mais modelos não foram encontrados. Verifique o diretório './models'.")
+    st.stop()
 
 # Página inicial (Início)
 if menu == "Início":
     st.markdown("<h2>🌍 Previsão de Expectativa de Vida</h2>", unsafe_allow_html=True)
     st.markdown(
-        "<p>Este sistema utiliza um modelo de Random Forest para prever a expectativa de vida com base em taxas de vacinação.</p>",
+        "<p>Este sistema ajuda a prever a expectativa de vida com base em variáveis demográficas, clínicas e socioeconômicas.</p>",
         unsafe_allow_html=True
     )
 
-# Página de análises estatísticas
+# Página de análises
 elif menu == "Estatísticas":
     st.title("📊 Estatísticas e Análises dos Dados")
 
-    # Carregar o dataset original
+    # Carregar um dataset para análises
     try:
-        df = pd.read_csv("./data/Life_Expectancy_Data.csv")
+        df = pd.read_csv("./data/Life_Expectancy_Clean.csv")
         st.success("Dataset carregado com sucesso!")
+        
+        # Estatísticas gerais
+        st.subheader("Estatísticas Descritivas")
+        st.write(df.describe())
+        
+        # Criar um gráfico interativo de correlação
+        st.subheader("📊 Matriz de Correlação")
+        corr_matrix = df.corr()
+        st.write(corr_matrix.style.background_gradient(cmap="coolwarm"))
+
     except FileNotFoundError:
-        st.error("Erro: O arquivo 'Life_Expectancy_Data.csv' não foi encontrado.")
-        st.stop()
+        st.error("Erro: O dataset './data/Life_Expectancy_Data.csv' não foi encontrado.")
 
-    # Visualizar o dataset
-    st.subheader("📋 Visualização do Dataset")
-    st.dataframe(df.head())
 
-    # Estatísticas descritivas
-    st.subheader("📈 Estatísticas Descritivas")
-    st.write(df.describe())
 
-    # Gráfico de correlação
-    st.subheader("📊 Correlação entre as Variáveis")
-    corr = df.corr()
-    fig_corr = px.imshow(corr, text_auto=True, title="Mapa de Correlação")
-    st.plotly_chart(fig_corr, use_container_width=True)
 
-    # Gráfico de distribuição das variáveis
-    st.subheader("📊 Distribuição das Taxas de Vacinação")
-    for col in ['Hepatitis B', 'Polio', 'Diphtheria']:
-        fig_dist = px.histogram(df, x=col, nbins=30, title=f"Distribuição de {col}")
-        st.plotly_chart(fig_dist, use_container_width=True)
+# Página de previsão para o modelo Socioeconômico
+elif menu == "Socioeconômico":
+    st.title("📈 Previsão de Expectativa de Vida - Modelo Socioeconômico")
+    st.write("Insira os dados abaixo para prever a expectativa de vida com base em fatores socioeconômicos:")
 
-# Página de previsão
-elif menu == "Previsão":
-    st.title("📈 Previsão de Expectativa de Vida")
-    st.write("Insira os dados abaixo para prever a expectativa de vida:")
+    # Variáveis do modelo socioeconômico (usadas no treinamento)
+    feature_columns = ['percentage expenditure', 'Total expenditure', 'GDP', 'Income composition of resources', 'Schooling']
 
-    # Variáveis do modelo
-    feature_columns = ['Hepatitis B', 'Polio', 'Diphtheria']
+    # Criar uma entrada padrão para os dados de entrada
+    input_data = {feature: st.slider(f"{feature}", 0.0, 100.0, 50.0) for feature in feature_columns}
 
-    # Validação da entrada do utilizador
-    input_data = {}
-    for feature in feature_columns:
-        input_value = st.slider(f"{feature} (%)", 0.0, 100.0, 50.0)
-        input_data[feature] = input_value
-
-    # Validar entrada
-    if not all(0 <= input_data[feature] <= 100 for feature in feature_columns):
-        st.warning("Por favor, insira valores entre 0 e 100.")
-        st.stop()
-
-    # Criar H2OFrame para entrada do modelo
+    # Criar DataFrame para entrada do modelo
     input_df = pd.DataFrame([input_data])
-    h2o_input = H2OFrame(input_df)
+
+    # Adicionar colunas ausentes com valores padrão (0.0) para garantir compatibilidade
+    for column in socioeconomic_model.feature_names_in_:
+        if column not in input_df.columns:
+            input_df[column] = 0.0
+
+    # Garantir a mesma ordem de colunas que foi usada no treinamento
+    input_df = input_df[socioeconomic_model.feature_names_in_]
 
     # Fazer previsão
-    if st.button("Fazer Previsão"):
-        prediction = rf_model.predict(h2o_input).as_data_frame().iloc[0, 0]
-        st.write(f"**Expectativa de Vida Prevista:** {round(prediction, 2)} anos")
-
-# Página de previsão em massa
-elif menu == "Previsão em Massa":
-    st.title("📂 Previsão em Massa")
-    st.write("Envie um arquivo CSV contendo os dados para prever a expectativa de vida para múltiplas entradas.")
-
-    # Upload do arquivo
-    uploaded_file = st.file_uploader("Envie o arquivo CSV", type=["csv"])
-    if uploaded_file:
+    if st.button("Fazer Previsão - Modelo Socioeconômico"):
         try:
-            mass_df = pd.read_csv(uploaded_file)
-            st.success("Arquivo carregado com sucesso!")
-            st.dataframe(mass_df.head())
+            prediction = socioeconomic_model.predict(input_df)[0]
+            st.write(f"**Expectativa de Vida Prevista (Socioeconômico):** {round(prediction, 2)} anos")
+        except ValueError as e:
+            st.error(f"Erro ao fazer a previsão: {e}")
 
-            # Converter para H2OFrame
-            h2o_mass_input = H2OFrame(mass_df)
+    # Exibir a importância das variáveis
+    st.subheader("📊 Importância das Variáveis no Modelo Socioeconômico")
+    try:
+        feature_importances = pd.DataFrame({
+            "Variável": socioeconomic_model.feature_names_in_,
+            "Importância": socioeconomic_model.feature_importances_
+        }).sort_values(by="Importância", ascending=False)
+        st.bar_chart(feature_importances.set_index("Variável"))
+    except AttributeError:
+        st.warning("A importância das variáveis não está disponível para o modelo carregado.")
 
-            # Fazer previsões em massa
-            predictions = rf_model.predict(h2o_mass_input).as_data_frame()
-            mass_df['Life Expectancy Prediction'] = predictions
 
-            # Exibir resultados
-            st.subheader("📋 Previsões")
-            st.dataframe(mass_df)
 
-            # Download do arquivo com previsões
-            csv = mass_df.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Baixar Resultados", data=csv, file_name="predictions.csv", mime="text/csv")
-        except Exception as e:
-            st.error(f"Erro ao processar o arquivo: {e}")
 
-# Encerrar o H2O ao sair
-st.sidebar.write("🔌 **H2O está ativo. Lembre-se de encerrar ao terminar.**")
-if st.sidebar.button("Encerrar H2O"):
-    h2o.shutdown(prompt=False)
+
+
+
+# Página de previsão para o modelo de Vacinação
+elif menu == "Vacinação":
+    st.title("📈 Previsão de Expectativa de Vida - Modelo de Vacinação")
+    st.write("Insira os dados abaixo para prever a expectativa de vida com base em taxas de vacinação:")
+
+    # Variáveis do modelo de vacinação
+    feature_columns = ['Hepatitis B', 'Polio', 'Diphtheria', 'percentage expenditure']
+
+    # Criar uma entrada padrão para os dados de entrada
+    input_data = {feature: st.slider(f"{feature}", 0.0, 100.0, 50.0) for feature in feature_columns}
+
+    # Criar DataFrame para entrada do modelo
+    input_df = pd.DataFrame([input_data])
+
+    # Adicionar colunas ausentes com valores padrão (0.0) para garantir compatibilidade
+    for column in vaccination_model.feature_names_in_:
+        if column not in input_df.columns:
+            input_df[column] = 0.0
+
+    # Garantir a mesma ordem de colunas que foi usada no treinamento
+    input_df = input_df[vaccination_model.feature_names_in_]
+
+    # Fazer previsão
+    if st.button("Fazer Previsão - Modelo de Vacinação"):
+        try:
+            prediction = vaccination_model.predict(input_df)[0]
+            st.write(f"**Expectativa de Vida Prevista (Vacinação):** {round(prediction, 2)} anos")
+        except ValueError as e:
+            st.error(f"Erro ao fazer a previsão: {e}")
