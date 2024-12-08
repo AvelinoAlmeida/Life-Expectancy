@@ -34,7 +34,7 @@ load_css("./css/config.css")
 st.sidebar.title("Menu")
 menu = st.sidebar.radio(
     "Ir para:",
-    ["Início", "Estatísticas", "Socioeconômico", "Vacinação"],
+    ["Início", "Estatísticas", "Modelos", "Socioeconômico", "Vacinação"],
     index=0
 )
 
@@ -50,6 +50,8 @@ if menu == "Início":
 elif menu == "Estatísticas":
     st.title("📊 Estatísticas e Análises")
     st.write("Aqui apresentamos análises descritivas dos dados.")
+elif menu == "Modelos":
+    st.title("📈 Treino de Modelos")    
 elif menu == "Socioeconômico":
     st.title("🌍 Modelo Socioeconômico")
 elif menu == "Vacinação":
@@ -171,6 +173,104 @@ elif menu == "Estatísticas":
     except FileNotFoundError as e:
         st.error(f"Erro: {e}")
 
+
+# Página de Treino de Modelos
+elif menu == "Modelos":
+    st.title("📊 Modelos de Treino")
+    st.write("Nesta página, apresentamos os modelos de previsão treinados, suas métricas de desempenho e análises visuais.")
+
+    import json
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    # Carregar métricas do modelo Socioeconômico
+    try:
+        with open("./models/socioeconomic_metrics.json", "r") as f:
+            socioeconomic_metrics = json.load(f)
+    except FileNotFoundError:
+        socioeconomic_metrics = None
+        st.error("Métricas do modelo Socioeconômico não encontradas!")
+
+    # Carregar métricas do modelo de Vacinação
+    try:
+        with open("./models/vaccination_metrics.json", "r") as f:
+            vaccination_metrics = json.load(f)
+    except FileNotFoundError:
+        vaccination_metrics = None
+        st.error("Métricas do modelo de Vacinação não encontradas!")
+
+    # Apresentar os resultados do modelo Socioeconômico
+    st.subheader("🌍 Modelo Socioeconômico (Random Forest)")
+
+    if socioeconomic_metrics:
+        # Métricas do modelo Socioeconômico
+        st.markdown("**Métricas do Modelo Socioeconômico**")
+        st.write(f"- **MAE:** {socioeconomic_metrics.get('mae', 'N/A')}")
+        st.write(f"- **MSE:** {socioeconomic_metrics.get('mse', 'N/A')}")
+        st.write(f"- **R²:** {socioeconomic_metrics.get('r2', 'N/A')}")
+
+        # Gráfico de Importância das Variáveis - Modelo Socioeconômico
+        st.markdown("**📊 Importância das Variáveis - Modelo Socioeconômico**")
+        feature_importance_rf = socioeconomic_metrics.get("feature_importance", {})
+        if feature_importance_rf:
+            features_rf = list(feature_importance_rf.keys())
+            importances_rf = list(feature_importance_rf.values())
+
+            # Criar gráfico de barras
+            fig_rf, ax_rf = plt.subplots(figsize=(8, 5))
+            sns.barplot(x=importances_rf, y=features_rf, palette="Blues_d", ax=ax_rf)
+            ax_rf.set_title("Importância das Variáveis (Random Forest)")
+            ax_rf.set_xlabel("Importância")
+            ax_rf.set_ylabel("Variáveis")
+            st.pyplot(fig_rf)
+        else:
+            st.warning("Importância das variáveis não disponível para o modelo Socioeconômico.")
+
+        # Gráfico de Valores Reais vs. Previstos - Modelo Socioeconômico
+        st.markdown("**📈 Valores Reais vs. Previstos - Modelo Socioeconômico**")
+        y_test_rf = socioeconomic_metrics.get("y_test", [])
+        y_pred_rf = socioeconomic_metrics.get("y_pred", [])
+        if y_test_rf and y_pred_rf:
+            fig_scatter_rf, ax_scatter_rf = plt.subplots(figsize=(8, 5))
+            sns.scatterplot(x=y_test_rf, y=y_pred_rf, ax=ax_scatter_rf, alpha=0.6)
+            ax_scatter_rf.plot([min(y_test_rf), max(y_test_rf)], [min(y_test_rf), max(y_test_rf)], 'r--')
+            ax_scatter_rf.set_title("Valores Reais vs. Previstos (Random Forest)")
+            ax_scatter_rf.set_xlabel("Valores Reais")
+            ax_scatter_rf.set_ylabel("Valores Previstos")
+            st.pyplot(fig_scatter_rf)
+        else:
+            st.warning("Dados de comparação (Valores Reais vs. Previstos) não disponíveis para o modelo Socioeconômico.")
+
+    st.markdown("---")
+
+    # Apresentar os resultados do modelo de Vacinação
+    st.subheader("💉 Modelo de Vacinação (Gradient Boosting Machine)")
+
+    if vaccination_metrics:
+        # Métricas do modelo de Vacinação
+        st.markdown("**Métricas do Modelo de Vacinação**")
+        st.write(f"- **MAE:** {vaccination_metrics.get('mae', 'N/A')}")
+        st.write(f"- **MSE:** {vaccination_metrics.get('mse', 'N/A')}")
+        st.write(f"- **R²:** {vaccination_metrics.get('r2', 'N/A')}")
+
+        # Gráfico de Importância das Variáveis - Modelo de Vacinação
+        st.markdown("**📊 Importância das Variáveis - Modelo de Vacinação**")
+        feature_importance_gbm = vaccination_metrics.get("feature_importance", {})
+        if feature_importance_gbm:
+            features_gbm = list(feature_importance_gbm.keys())
+            importances_gbm = list(feature_importance_gbm.values())
+
+            # Criar gráfico de barras
+            fig_gbm, ax_gbm = plt.subplots(figsize=(8, 5))
+            sns.barplot(x=importances_gbm, y=features_gbm, palette="Greens_d", ax=ax_gbm)
+            ax_gbm.set_title("Importância das Variáveis (Gradient Boosting Machine)")
+            ax_gbm.set_xlabel("Importância")
+            ax_gbm.set_ylabel("Variáveis")
+            st.pyplot(fig_gbm)
+        else:
+            st.warning("Importância das variáveis não disponível para o modelo de Vacinação.")
+
+        
 
 ## Página de previsão para o modelo Socioeconômico
 elif menu == "Socioeconômico":
