@@ -1,0 +1,27 @@
+.sidebar .sidebar-content {
+    padding-top: 20px;
+    padding-left: 10px;
+}
+.menu-item {
+    margin-bottom: 30px; /* Aumenta o espaço vertical */
+    font-size: 20px; /* Aumenta a fonte */
+    font-weight: bold;
+}
+.menu-item:hover {
+    color: #ff008c;
+}
+.radio-container .element-container {
+    padding-top: 10px; /* Espaço adicional no topo */
+    padding-bottom: 10px; /* Espaço adicional na parte inferior */
+}
+.menu-icon {
+    font-size: 22px; /* Aumenta o tamanho dos ícones */
+    margin-right: 10px;
+}
+
+.responsive-image img {
+    max-width: 60%;  /* Ajusta o tamanho máximo (60% da largura da página) */
+    height: auto;    /* Mantém a proporção original da imagem */
+    display: block;
+    margin: 0 auto;  /* Centraliza a imagem */
+}
