@@ -5,9 +5,6 @@ import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
-import streamlit as st
-
 # Configurar a página
 st.set_page_config(page_title="Sistema de Apoio à Decisão", layout="wide")
 
@@ -30,33 +27,6 @@ def load_css(file_path):
 # Carregar o arquivo CSS geral
 load_css("./css/config.css")
 
-# Configurar o menu no Streamlit
-st.sidebar.title("Menu")
-menu = st.sidebar.radio(
-    "Ir para:",
-    ["Início", "Estatísticas", "Modelos", "Socioeconômico", "Vacinação"],
-    index=0
-)
-
-
-# Controle de navegação
-if menu == "Início":
-    st.title("🏠 Bem-vindo!")
-    st.write("Esta é a página inicial do sistema de apoio à decisão.")
-    
-    # Adicionar uma imagem
-    st.image("./img/imagem1.jpg", caption="Sistema de Apoio à Decisão")
-
-elif menu == "Estatísticas":
-    st.title("📊 Estatísticas e Análises")
-    st.write("Aqui apresentamos análises descritivas dos dados.")
-elif menu == "Modelos":
-    st.title("📈 Treino de Modelos")    
-elif menu == "Socioeconômico":
-    st.title("🌍 Modelo Socioeconômico")
-elif menu == "Vacinação":
-    st.title("💉 Modelo de Vacinação")
-
 
 # Carregar os modelos salvos
 try:
@@ -67,8 +37,38 @@ except FileNotFoundError:
     st.sidebar.error("Erro: Um ou mais modelos não foram encontrados. Verifique o diretório './models'.")
     st.stop()
 
-# Página inicial (Início)
-if menu == "Início":
+
+# Configurar o menu no Streamlit
+st.sidebar.title("Menu")
+menu = st.sidebar.radio(
+    "Ir para:",
+    ["Home", "Estatísticas", "Treino", "Socioeconômico", "Vacinação"],
+    index=0
+)
+
+
+# Controle de navegação
+if menu == "Home":
+    st.title("🏠 Bem-vindo!")
+elif menu == "Estatísticas":
+    st.title("📊 Análises e Estatísticas do Dataset")
+elif menu == "Treino":
+    st.title("📈 Treino de Modelos")    
+elif menu == "Socioeconômico":
+    st.title("🌍 Modelo Socioeconômico")
+elif menu == "Vacinação":
+    st.title("💉 Modelo de Vacinação")
+
+
+
+## Página Home
+if menu == "Home":
+
+    st.write("Esta é a página inicial do sistema de apoio à decisão.")
+    
+    # Adicionar uma imagem
+    st.image("./img/imagem1.jpg", caption="Sistema de Apoio à Decisão")
+
     st.markdown("<h2>🌍 Previsão de Expectativa de Vida</h2>", unsafe_allow_html=True)
     st.markdown(
         "<p>Este sistema ajuda a prever a expectativa de vida com base em variáveis demográficas, clínicas e socioeconômicas.</p>",
@@ -76,114 +76,68 @@ if menu == "Início":
     )
 
 
+# Carregar o dataset original
+    df = pd.read_csv("./data/Life Expectancy Data.csv")
+    
+# Estatísticas gerais do dataset original
+    st.subheader("Dataset Original")
+    st.write(df.describe())
+
+  # Dados em falta
+    st.subheader("Dados em falta")
+    st.image("./img/grafico1.png", caption="Dados em falta")
+    
+# Matriz de Correlação do Dataset Original
+    st.subheader("Correlação - Dataset Original")
+    numeric_df = df.select_dtypes(include=["number"])
+    corr_matrix = numeric_df.corr()
+    st.write(corr_matrix.style.background_gradient(cmap="coolwarm"))
+
+# Análise dos atributos
+    st.subheader("Análise dos atributos")
+    st.image("./img/grafico2.png", caption="Análise dos atributos")
+
+
 # Página de análises
 elif menu == "Estatísticas":
-    st.title("📊 Análises e Estatísticas do Dataset")
     
-    # Adicionar uma imagem ilustrativa
+# Adicionar uma imagem ilustrativa
     st.image("./img/imagem2.jpg", caption="Processo de Análise")
 
-    # Carregar datasets para análises
-    try:
-        # Carregar o dataset original
-        df = pd.read_csv("./data/Life Expectancy Data.csv")
-        st.success("Dataset Original carregado com sucesso!")
-        
-        # Estatísticas gerais do dataset original
-        st.subheader("📊 Estatísticas do Dataset Original")
-        st.write(df.describe())
+# Introdução
+    st.subheader("📋 Observações sobre o novo Dataset")
+    st.markdown("""
+    - **Os dados foram limpos** e todas as linhas com valores nulos foram removidas.
+    - **Não existe mais valores nulos no dataset.**
+    - O **dataset original** tinha **2.938 registos** e **22 colunas**.
+    - Após a limpeza, o **dataset atual** contém **1.649 entradas**.
+    """)
+# Distribuição dos Dados
+    st.subheader("Análise dos atributos depois de limpos")
+    st.image("./img/grafico3.png", caption="Análise dos atributos")
 
-        # Matriz de Correlação do Dataset Original
-        st.subheader("📊 Matriz de Correlação - Dataset Original")
-        numeric_df = df.select_dtypes(include=["number"])
-        corr_matrix = numeric_df.corr()
-        st.write(corr_matrix.style.background_gradient(cmap="coolwarm"))
+# GDP
+    st.subheader("📋 Aplicação da Transformação Logarítmica")
+    st.markdown("""
+    Técnica de pré-processamento de dados em que se aplica a função logarítmica a um ou mais valores de um conjunto de dados
+    quando os dados apresentam uma distribuição assimétrica positiva (longa cauda à direita), 
+    a transformação logarítmica ajuda a tornar a distribuição mais simétrica
+    """)    
+    st.image("./img/grafico4.png", caption="Análise dos atributos")
 
-        # Gráficos de dispersão - Dataset Original
-        st.subheader("📈 Gráficos de Dispersão - Dataset Original")
-        selected_columns = [
-            "percentage expenditure", "GDP", 
-            "Income composition of resources", "Schooling"
-        ]
-        for column in selected_columns:
-            if column.strip() in df.columns:
-                st.write(f"### Relação entre **{column.strip()}** e **Expectativa de Vida**")
-                plt.figure(figsize=(5, 5))
-                sns.scatterplot(x=df[column.strip()], y=df["Life expectancy "])
-                plt.title(f"Relação entre {column.strip()} e Expectativa de Vida")
-                plt.xlabel(column.strip())
-                plt.ylabel("Expectativa de Vida")
-                st.pyplot(plt)
-                plt.clf()
-            else:
-                st.warning(f"Coluna '{column.strip()}' não encontrada no dataset.")
-
-        # Visualizar a distribuição de valores nulos - Dataset Original
-        st.subheader("📉 Distribuição de Valores Nulos - Dataset Original")
-        if df.isnull().sum().sum() > 0:
-            plt.figure(figsize=(12, 6))
-            sns.heatmap(df.isnull(), cbar=False, cmap="viridis")
-            plt.title("Distribuição de Valores Nulos no Dataset Original", fontsize=16)
-            plt.xlabel("Variáveis")
-            plt.ylabel("Registos")
-            st.pyplot(plt)
-            st.write("### Soma de valores nulos por variável:")
-            st.write(df.isnull().sum())
-        else:
-            st.success("Não existem valores nulos no Dataset Original!")
-        
-        # Carregar o dataset limpo
-        df_clean = pd.read_csv("./data/Life_Expectancy_Clean.csv")
-        st.success("Dataset Limpo carregado com sucesso!")
-        
-        # Estatísticas gerais do dataset limpo
-        st.subheader("📊 Estatísticas do Dataset Limpo")
-        st.write(df_clean.describe())
-        
-        # Matriz de Correlação do Dataset Limpo
-        st.subheader(" Matriz de Correlação - Dataset Limpo")
-        clean_corr_matrix = df_clean.corr()
-        st.write(clean_corr_matrix.style.background_gradient(cmap="coolwarm"))
-
-        # Histograma das variáveis - Dataset Limpo
-        st.subheader("📊 Distribuição das Variáveis - Dataset Limpo")
-
-        try:
-            # Gerar histogramas para todas as variáveis numéricas no dataset limpo
-            numeric_columns = df_clean.select_dtypes(include=["number"]).columns
-
-            # Configurar o tamanho da figura e criar histogramas
-            fig, ax = plt.subplots(figsize=(10, 5))
-            df_clean[numeric_columns].hist(
-                bins=20,
-                color="skyblue",
-                alpha=0.7,
-                ax=ax,
-                grid=False,
-            )
-            plt.suptitle("📈 Distribuição das Variáveis no Dataset Limpo", fontsize=16)
-            plt.tight_layout()
-
-            # Exibir os histogramas no Streamlit
-            st.pyplot(fig)
-
-        except Exception as e:
-            st.error(f"Ocorreu um erro ao gerar os histogramas: {e}")
-
-    except FileNotFoundError as e:
-        st.error(f"Erro: {e}")
+# Distribuição Final dos Dados
+    st.subheader("Distribuição Final dos Dados")
+    st.image("./img/grafico5.png", caption="Dataset_Clean")
+  
 
 
 # Página de Treino de Modelos
-elif menu == "Modelos":
-    st.title("📊 Modelos de Treino")
+elif menu == "Treino":
     st.write("Nesta página, apresentamos os modelos de previsão treinados, suas métricas de desempenho e análises visuais.")
 
     import json
-    import matplotlib.pyplot as plt
-    import seaborn as sns
 
-    # Carregar métricas do modelo Socioeconômico
+# Carregar métricas do modelo Socioeconômico
     try:
         with open("./models/socioeconomic_metrics.json", "r") as f:
             socioeconomic_metrics = json.load(f)
@@ -191,7 +145,7 @@ elif menu == "Modelos":
         socioeconomic_metrics = None
         st.error("Métricas do modelo Socioeconômico não encontradas!")
 
-    # Carregar métricas do modelo de Vacinação
+# Carregar métricas do modelo de Vacinação
     try:
         with open("./models/vaccination_metrics.json", "r") as f:
             vaccination_metrics = json.load(f)
@@ -199,52 +153,27 @@ elif menu == "Modelos":
         vaccination_metrics = None
         st.error("Métricas do modelo de Vacinação não encontradas!")
 
-    # Apresentar os resultados do modelo Socioeconômico
+    st.subheader("Objetivo - Previsão média de vida (anos)")
+    st.image("./img/grafico6.png", caption="Dataset_Clean")
+
+
+
+# Apresentar os resultados do modelo Socioeconômico
     st.subheader("🌍 Modelo Socioeconômico (Random Forest)")
 
     if socioeconomic_metrics:
         # Métricas do modelo Socioeconômico
-        st.markdown("**Métricas do Modelo Socioeconômico**")
+        st.markdown("**Métricas Iniciais de Teste do Modelo Socioeconômico**")
         st.write(f"- **MAE:** {socioeconomic_metrics.get('mae', 'N/A')}")
         st.write(f"- **MSE:** {socioeconomic_metrics.get('mse', 'N/A')}")
         st.write(f"- **R²:** {socioeconomic_metrics.get('r2', 'N/A')}")
 
-        # Gráfico de Importância das Variáveis - Modelo Socioeconômico
-        st.markdown("**📊 Importância das Variáveis - Modelo Socioeconômico**")
-        feature_importance_rf = socioeconomic_metrics.get("feature_importance", {})
-        if feature_importance_rf:
-            features_rf = list(feature_importance_rf.keys())
-            importances_rf = list(feature_importance_rf.values())
+        st.image("./img/grafico7.png", caption="Modelo Teste Socioeconômico")
+        st.image("./img/grafico8.png", caption="Modelo Final - Gradient Boosting Machine")
 
-            # Criar gráfico de barras
-            fig_rf, ax_rf = plt.subplots(figsize=(8, 5))
-            sns.barplot(x=importances_rf, y=features_rf, palette="Blues_d", ax=ax_rf)
-            ax_rf.set_title("Importância das Variáveis (Random Forest)")
-            ax_rf.set_xlabel("Importância")
-            ax_rf.set_ylabel("Variáveis")
-            st.pyplot(fig_rf)
-        else:
-            st.warning("Importância das variáveis não disponível para o modelo Socioeconômico.")
 
-        # Gráfico de Valores Reais vs. Previstos - Modelo Socioeconômico
-        st.markdown("**📈 Valores Reais vs. Previstos - Modelo Socioeconômico**")
-        y_test_rf = socioeconomic_metrics.get("y_test", [])
-        y_pred_rf = socioeconomic_metrics.get("y_pred", [])
-        if y_test_rf and y_pred_rf:
-            fig_scatter_rf, ax_scatter_rf = plt.subplots(figsize=(8, 5))
-            sns.scatterplot(x=y_test_rf, y=y_pred_rf, ax=ax_scatter_rf, alpha=0.6)
-            ax_scatter_rf.plot([min(y_test_rf), max(y_test_rf)], [min(y_test_rf), max(y_test_rf)], 'r--')
-            ax_scatter_rf.set_title("Valores Reais vs. Previstos (Random Forest)")
-            ax_scatter_rf.set_xlabel("Valores Reais")
-            ax_scatter_rf.set_ylabel("Valores Previstos")
-            st.pyplot(fig_scatter_rf)
-        else:
-            st.warning("Dados de comparação (Valores Reais vs. Previstos) não disponíveis para o modelo Socioeconômico.")
-
-    st.markdown("---")
-
-    # Apresentar os resultados do modelo de Vacinação
-    st.subheader("💉 Modelo de Vacinação (Gradient Boosting Machine)")
+# Apresentar os resultados do modelo de Vacinação
+    st.subheader("💉 Modelo de Vacinação (Random Forest)")
 
     if vaccination_metrics:
         # Métricas do modelo de Vacinação
@@ -253,22 +182,8 @@ elif menu == "Modelos":
         st.write(f"- **MSE:** {vaccination_metrics.get('mse', 'N/A')}")
         st.write(f"- **R²:** {vaccination_metrics.get('r2', 'N/A')}")
 
-        # Gráfico de Importância das Variáveis - Modelo de Vacinação
-        st.markdown("**📊 Importância das Variáveis - Modelo de Vacinação**")
-        feature_importance_gbm = vaccination_metrics.get("feature_importance", {})
-        if feature_importance_gbm:
-            features_gbm = list(feature_importance_gbm.keys())
-            importances_gbm = list(feature_importance_gbm.values())
-
-            # Criar gráfico de barras
-            fig_gbm, ax_gbm = plt.subplots(figsize=(8, 5))
-            sns.barplot(x=importances_gbm, y=features_gbm, palette="Greens_d", ax=ax_gbm)
-            ax_gbm.set_title("Importância das Variáveis (Gradient Boosting Machine)")
-            ax_gbm.set_xlabel("Importância")
-            ax_gbm.set_ylabel("Variáveis")
-            st.pyplot(fig_gbm)
-        else:
-            st.warning("Importância das variáveis não disponível para o modelo de Vacinação.")
+        st.image("./img/grafico9.png", caption="Modelo Teste Vacinação")
+        st.image("./img/grafico10.png", caption="Modelo Final - Gradient Boosting Machine")
 
         
 
